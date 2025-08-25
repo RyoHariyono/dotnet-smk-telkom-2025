@@ -27,8 +27,11 @@ public class QuestionController : ControllerBase
     [FromQuery] string discount
   )
   {
-    // Business logic: discount should be applied as int
-    int discountValue = int.Parse(discount); // <--- Crashes if input is not a number
+    if (!int.TryParse(discount, out int discountValue))
+    {
+      return BadRequest(new { message = "Discount must be a valid number" });
+    }
+    // int discountValue = int.Parse(discount); // <--- Crashes if input is not a number
 
     int price = 1000;
     int finalPrice = price - discountValue;
@@ -73,6 +76,11 @@ public class QuestionController : ControllerBase
     //! DONT CHANGE THIS LINE
     var user = User.GetFromExternalSource(); // <--Simulate missing data
 
+    if (string.IsNullOrEmpty(user.Name))
+    {
+      return BadRequest(new { message = "Name is required" });
+    }
+
     return Ok(new
     {
       userInitial = user.GetInitial()
@@ -96,7 +104,7 @@ public class QuestionController : ControllerBase
   )
   {
     // TODO: Business rule: apply discount based on % of price
-    int discount = requestDto.Price / requestDto.DiscountPercent; // <-- Wrong formula!
+    int discount = (requestDto.Price * requestDto.DiscountPercent) / 100; // <-- Wrong formula!
     int finalPrice = requestDto.Price - discount;
 
     return Ok(new
@@ -136,13 +144,13 @@ public class QuestionController : ControllerBase
       // Members get 10% discount
       if (this.IsMember)
       {
-        // TODO: apply member discount
+        total *= 0.9;  // TODO: apply member discount
       }
 
       // If buying more than 5 books, apply additional 5% discount
       if (this.Quantity > 5)
       {
-        // TODO: apply bulk discount
+        total *= 0.95;// TODO: apply bulk discount
       }
 
       return total;
@@ -186,6 +194,15 @@ public class QuestionController : ControllerBase
       // TODO: calculate fee correctly
       // First 5 days: 1000 per day
       // After 5 days: 2000 per day
+
+      if (daysLate <= 5)
+      {
+        fee = daysLate * 1000;
+      }
+      else
+      {
+        fee = (5 * 1000) + ((daysLate - 5) * 2000);
+      }
 
       return fee;
     }
