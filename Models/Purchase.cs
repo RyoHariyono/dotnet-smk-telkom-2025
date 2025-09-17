@@ -2,14 +2,14 @@ using System;
 
 namespace BookStore.Models
 {
-    public class Purchase
+    public class Purchase : Base
     {
-        public int Id { get; set; }
-        public int BookId { get; set; }
-        public Book Book { get; set; }
 
-        public int CustomerId { get; set; }
-        public Customer Customer { get; set; }
+        public Guid BookId { get; set; }
+        public Guid CustomerId { get; set; }
+
+        public virtual Book Book { get; set; }
+        public virtual Customer Customer { get; set; }
 
         public int Quantity { get; set; }
         public decimal TotalPrice { get; set; }
