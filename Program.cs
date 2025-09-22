@@ -1,40 +1,43 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
-using BookStore.Databases;
-using BookStore.Repositories;
-using BookStore.Services;
+using dotnet_smk_telkom_2025.Infrastructure.Databases;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Add DbContext with In-Memory Database (correct syntax)
-builder.Services.AddDbContext<InMemoryDbContext>(options =>
-    options.UseInMemoryDatabase("BookStoreDb"));
+// Add services to the container.
 
-// Repositories
-builder.Services.AddScoped<IBookRepository, BookRepository>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddSingleton<InMemoryDbContext>();
 
-// Services
-builder.Services.AddScoped<IBookService, BookService>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
+/* ------------------------------ Repositories ------------------------------ */
+// Add repositories here when needed
+// builder.Services.AddScoped<IUserRepository, UserRepository>();
+// builder.Services.AddScoped<IBookRepository, BookRepository>();
+// builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+// builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 
-// Controllers & API
+/* -------------------------------- Services -------------------------------- */
+// Add services here when needed
+// builder.Services.AddScoped<IUserService, UserService>();
+// builder.Services.AddScoped<IBookService, BookService>();
+// builder.Services.AddScoped<ICustomerService, CustomerService>();
+// builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+
 builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseRouting();
+app.UseHttpsRedirection();
+
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
