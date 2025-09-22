@@ -1,10 +1,7 @@
-using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
-using dotnet_smk_telkom_2025.Infrastructure.Databases;
 using dotnet_smk_telkom_2025.Infrastructure.Exceptions;
 using dotnet_smk_telkom_2025.Repositories;
-using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_smk_telkom_2025.Services;
 
@@ -22,36 +19,25 @@ public class BookService
         _bookStoreRepository = bookStoreRepository;
     }
 
-    public (IActionResult, List<BookResult>) GetAll()
+    public List<BookResult> GetAll()
     {
         var books = _bookQueryRepository.FindAll();
         var results = BookResult.MapModels(books);
-        return (null, results);
+        return results;
     }
 
-    public (IActionResult, BookResult) FindOneById(Guid id)
+    public BookResult FindOneById(Guid id)
     {
-        try
+        var book = _bookQueryRepository.FindOneById(id);
+        if (book == null)
         {
-            var book = _bookQueryRepository.FindOneById(id);
-            if (book == null)
-            {
-                throw new NotFoundException("Book not found");
-            }
-            var result = new BookResult(book);
-            return (null, result);
+            throw new NotFoundException("Book not found");
         }
-        catch (NotFoundException e)
-        {
-            return (new NotFoundObjectResult(e.Message), null);
-        }
-        catch (Exception e)
-        {
-            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
-        }
+        var result = new BookResult(book);
+        return result;
     }
 
-    public (IActionResult, BookResult) Create(
+    public BookResult Create(
       BookCreateParameter parameter
     )
     {
@@ -59,59 +45,36 @@ public class BookService
         book = _bookStoreRepository.Create(book);
 
         var result = new BookResult(book);
-        return (null, result);
+        return result;
     }
 
-    public (IActionResult, BookResult) Update(
+    public BookResult Update(
       Guid id,
       BookUpdateParameter parameter
     )
     {
-        try
+        var book = _bookQueryRepository.FindOneById(id);
+        if (book == null)
         {
-            var book = _bookQueryRepository.FindOneById(id);
-            if (book == null)
-            {
-                throw new NotFoundException("Book not found");
-            }
-            book = BookUpdateParameter.ToModel(book, parameter);
-            book = _bookStoreRepository.UpdateById(id, book);
+            throw new NotFoundException("Book not found");
+        }
+        book = BookUpdateParameter.ToModel(book, parameter);
+        book = _bookStoreRepository.UpdateById(id, book);
 
-            var result = new BookResult(book);
-            return (null, result);
-        }
-        catch (NotFoundException e)
-        {
-            return (new NotFoundObjectResult(e.Message), null);
-        }
-        catch (Exception e)
-        {
-            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
-        }
+        var result = new BookResult(book);
+        return result;
     }
 
-    public (IActionResult, BookResult) Delete(
+    public void Delete(
       Guid id
     )
     {
-        try
+        var book = _bookQueryRepository.FindOneById(id);
+        if (book == null)
         {
-            var book = _bookQueryRepository.FindOneById(id);
-            if (book == null)
-            {
-                throw new NotFoundException("Book not found");
-            }
+            throw new NotFoundException("Book not found");
+        }
 
-            _bookStoreRepository.DeleteById(id);
-            return (null, null);
-        }
-        catch (NotFoundException e)
-        {
-            return (new NotFoundObjectResult(e.Message), null);
-        }
-        catch (Exception e)
-        {
-            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
-        }
+        _bookStoreRepository.DeleteById(id);
     }
 }

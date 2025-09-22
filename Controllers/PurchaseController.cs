@@ -23,24 +23,14 @@ public class PurchaseController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var (error, results) = _purchaseService.GetAll();
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _purchaseService.GetAll();
         return Ok(results);
     }
 
     [HttpGet("{id}")]
     public IActionResult FindOneById(Guid id)
     {
-        var (error, results) = _purchaseService.FindOneById(id);
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _purchaseService.FindOneById(id);
         return Ok(results);
     }
 
@@ -49,13 +39,8 @@ public class PurchaseController : ControllerBase
       [FromBody] PurchaseCreateParameter parameter
     )
     {
-        var (error, results) = _purchaseService.Create(parameter);
-        if (error != null)
-        {
-            return error;
-        }
-
-        return Ok(results);
+        var result = _purchaseService.Create(parameter);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
@@ -63,12 +48,8 @@ public class PurchaseController : ControllerBase
       Guid id
     )
     {
-        var (error, results) = _purchaseService.Delete(id);
-        if (error != null)
-        {
-            return error;
-        }
+        _purchaseService.Delete(id);
 
-        return Ok(results);
+        return Ok();
     }
 }

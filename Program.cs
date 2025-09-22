@@ -1,6 +1,7 @@
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
 using dotnet_smk_telkom_2025.Services;
 using dotnet_smk_telkom_2025.Repositories;
+using dotnet_smk_telkom_2025.Infrastructure.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseMiddleware<ExceptionHandler>();
 
 app.UseHttpsRedirection();
 

@@ -23,24 +23,14 @@ public class BookController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var (error, results) = _bookService.GetAll();
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _bookService.GetAll();
         return Ok(results);
     }
 
     [HttpGet("{id}")]
     public IActionResult FindOneById(Guid id)
     {
-        var (error, results) = _bookService.FindOneById(id);
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _bookService.FindOneById(id);
         return Ok(results);
     }
 
@@ -49,13 +39,8 @@ public class BookController : ControllerBase
       [FromBody] BookCreateParameter parameter
     )
     {
-        var (error, results) = _bookService.Create(parameter);
-        if (error != null)
-        {
-            return error;
-        }
-
-        return Ok(results);
+        var result = _bookService.Create(parameter);
+        return Ok(result);
     }
 
     [HttpPatch("{id}")]
@@ -64,13 +49,8 @@ public class BookController : ControllerBase
       [FromBody] BookUpdateParameter parameter
     )
     {
-        var (error, results) = _bookService.Update(id, parameter);
-        if (error != null)
-        {
-            return error;
-        }
-
-        return Ok(results);
+        var result = _bookService.Update(id, parameter);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
@@ -78,12 +58,8 @@ public class BookController : ControllerBase
       Guid id
     )
     {
-        var (error, results) = _bookService.Delete(id);
-        if (error != null)
-        {
-            return error;
-        }
+        _bookService.Delete(id);
 
-        return Ok(results);
+        return Ok();
     }
 }

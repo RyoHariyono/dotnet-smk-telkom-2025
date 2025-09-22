@@ -23,24 +23,14 @@ public class CustomerController : ControllerBase
     [HttpGet]
     public IActionResult GetAll()
     {
-        var (error, results) = _customerService.GetAll();
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _customerService.GetAll();
         return Ok(results);
     }
 
     [HttpGet("{id}")]
     public IActionResult FindOneById(Guid id)
     {
-        var (error, results) = _customerService.FindOneById(id);
-        if (error != null)
-        {
-            return error;
-        }
-
+        var results = _customerService.FindOneById(id);
         return Ok(results);
     }
 
@@ -49,13 +39,8 @@ public class CustomerController : ControllerBase
       [FromBody] CustomerCreateParameter parameter
     )
     {
-        var (error, results) = _customerService.Create(parameter);
-        if (error != null)
-        {
-            return error;
-        }
-
-        return Ok(results);
+        var result = _customerService.Create(parameter);
+        return Ok(result);
     }
 
     [HttpPatch("{id}")]
@@ -64,13 +49,8 @@ public class CustomerController : ControllerBase
       [FromBody] CustomerUpdateParameter parameter
     )
     {
-        var (error, results) = _customerService.Update(id, parameter);
-        if (error != null)
-        {
-            return error;
-        }
-
-        return Ok(results);
+        var result = _customerService.Update(id, parameter);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
@@ -78,12 +58,8 @@ public class CustomerController : ControllerBase
       Guid id
     )
     {
-        var (error, results) = _customerService.Delete(id);
-        if (error != null)
-        {
-            return error;
-        }
+        _customerService.Delete(id);
 
-        return Ok(results);
+        return Ok();
     }
 }
