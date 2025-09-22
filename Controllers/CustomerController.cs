@@ -1,4 +1,7 @@
+using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
+using dotnet_smk_telkom_2025.Dtos.Results;
+using dotnet_smk_telkom_2025.Infrastructure.Dtos;
 using dotnet_smk_telkom_2025.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,45 +24,45 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public ApiResponse GetAll()
     {
         var results = _customerService.GetAll();
-        return Ok(results);
+        return new ApiResponseList<CustomerResult>(results);
     }
 
     [HttpGet("{id}")]
-    public IActionResult FindOneById(Guid id)
+    public ApiResponse FindOneById(Guid id)
     {
-        var results = _customerService.FindOneById(id);
-        return Ok(results);
+        var result = _customerService.FindOneById(id);
+        return new ApiResponseData<CustomerResult>(result);
     }
 
     [HttpPost]
-    public IActionResult Create(
+    public ApiResponse Create(
       [FromBody] CustomerCreateParameter parameter
     )
     {
         var result = _customerService.Create(parameter);
-        return Ok(result);
+        return new ApiResponseData<CustomerResult>(result, HttpStatusCode.Created);
     }
 
     [HttpPatch("{id}")]
-    public IActionResult Update(
+    public ApiResponse Update(
       Guid id,
       [FromBody] CustomerUpdateParameter parameter
     )
     {
         var result = _customerService.Update(id, parameter);
-        return Ok(result);
+        return new ApiResponseData<CustomerResult>(result);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(
+    public ApiResponse Delete(
       Guid id
     )
     {
         _customerService.Delete(id);
 
-        return Ok();
+        return new ApiResponseData<CustomerResult>(null);
     }
 }

@@ -1,4 +1,7 @@
+using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
+using dotnet_smk_telkom_2025.Dtos.Results;
+using dotnet_smk_telkom_2025.Infrastructure.Dtos;
 using dotnet_smk_telkom_2025.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,35 +24,35 @@ public class PurchaseController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetAll()
+    public ApiResponse GetAll()
     {
         var results = _purchaseService.GetAll();
-        return Ok(results);
+        return new ApiResponseList<PurchaseResult>(results);
     }
 
     [HttpGet("{id}")]
-    public IActionResult FindOneById(Guid id)
+    public ApiResponse FindOneById(Guid id)
     {
-        var results = _purchaseService.FindOneById(id);
-        return Ok(results);
+        var result = _purchaseService.FindOneById(id);
+        return new ApiResponseData<PurchaseResult>(result);
     }
 
     [HttpPost]
-    public IActionResult Create(
+    public ApiResponse Create(
       [FromBody] PurchaseCreateParameter parameter
     )
     {
         var result = _purchaseService.Create(parameter);
-        return Ok(result);
+        return new ApiResponseData<PurchaseResult>(result, HttpStatusCode.Created);
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(
+    public ApiResponse Delete(
       Guid id
     )
     {
         _purchaseService.Delete(id);
 
-        return Ok();
+        return new ApiResponseData<PurchaseResult>(null);
     }
 }
