@@ -1,7 +1,5 @@
 using dotnet_smk_telkom_2025.Dtos.Parameters;
-using dotnet_smk_telkom_2025.Dtos.Results;
-using dotnet_smk_telkom_2025.Infrastructure.Databases;
-using BookStore.Models;
+using dotnet_smk_telkom_2025.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_smk_telkom_2025.Controllers;
@@ -11,34 +9,39 @@ namespace dotnet_smk_telkom_2025.Controllers;
 public class CustomerController : ControllerBase
 {
     private readonly ILogger<CustomerController> _logger;
-    private readonly InMemoryDbContext _inMemoryDb;
+    private readonly CustomerService _customerService;
 
     public CustomerController(
       ILogger<CustomerController> logger,
-      InMemoryDbContext inMemoryDb
+      CustomerService customerService
     )
     {
         _logger = logger;
-        _inMemoryDb = inMemoryDb;
+        _customerService = customerService;
     }
 
     [HttpGet]
     public IActionResult GetAll()
     {
-        var results = CustomerResult.MapModels(_inMemoryDb.Customers);
+        var (error, results) = _customerService.GetAll();
+        if (error != null)
+        {
+            return error;
+        }
+
         return Ok(results);
     }
 
     [HttpGet("{id}")]
     public IActionResult FindOneById(Guid id)
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
-        if (customer == null)
+        var (error, results) = _customerService.FindOneById(id);
+        if (error != null)
         {
-            return NotFound("Customer not found");
+            return error;
         }
-        var result = new CustomerResult(customer);
-        return Ok(result);
+
+        return Ok(results);
     }
 
     [HttpPost]
@@ -46,14 +49,13 @@ public class CustomerController : ControllerBase
       [FromBody] CustomerCreateParameter parameter
     )
     {
-        var customer = CustomerCreateParameter.ToModel(parameter);
-        customer.Id = Guid.NewGuid();
-        customer.CreatedAt = DateTime.Now;
-        customer.UpdatedAt = DateTime.Now;
-        _inMemoryDb.Customers.Add(customer);
+        var (error, results) = _customerService.Create(parameter);
+        if (error != null)
+        {
+            return error;
+        }
 
-        var result = new CustomerResult(customer);
-        return Ok(result);
+        return Ok(results);
     }
 
     [HttpPatch("{id}")]
@@ -62,22 +64,13 @@ public class CustomerController : ControllerBase
       [FromBody] CustomerUpdateParameter parameter
     )
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
-        if (customer == null)
+        var (error, results) = _customerService.Update(id, parameter);
+        if (error != null)
         {
-            return NotFound("Customer not found");
-        }
-        customer = CustomerUpdateParameter.ToModel(customer, parameter);
-
-        var index = _inMemoryDb.Customers.FindIndex(c => c.Id == customer.Id);
-        if (index >= 0)
-        {
-            customer.UpdatedAt = DateTime.Now;
-            _inMemoryDb.Customers[index] = customer;
+            return error;
         }
 
-        var result = new CustomerResult(customer);
-        return Ok(result);
+        return Ok(results);
     }
 
     [HttpDelete("{id}")]
@@ -85,12 +78,12 @@ public class CustomerController : ControllerBase
       Guid id
     )
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
-        if (customer == null)
+        var (error, results) = _customerService.Delete(id);
+        if (error != null)
         {
-            return NotFound("Customer not found");
+            return error;
         }
-        _inMemoryDb.Customers.Remove(customer);
-        return Ok();
+
+        return Ok(results);
     }
 }

@@ -48,29 +48,6 @@ public class PurchaseService
         return (null, result);
     }
 
-    public (IActionResult, PurchaseResult) Update(
-      Guid id,
-      PurchaseUpdateParameter parameter
-    )
-    {
-        var purchase = _inMemoryDb.Purchases.FirstOrDefault(p => p.Id == id);
-        if (purchase == null)
-        {
-            return (new NotFoundObjectResult("Purchase not found"), null);
-        }
-        purchase = PurchaseUpdateParameter.ToModel(purchase, parameter);
-
-        var index = _inMemoryDb.Purchases.FindIndex(p => p.Id == purchase.Id);
-        if (index >= 0)
-        {
-            purchase.UpdatedAt = DateTime.Now;
-            _inMemoryDb.Purchases[index] = purchase;
-        }
-
-        var result = new PurchaseResult(purchase);
-        return (null, result);
-    }
-
     public (IActionResult, PurchaseResult) Delete(
       Guid id
     )

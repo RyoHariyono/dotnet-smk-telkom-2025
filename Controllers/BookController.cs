@@ -1,7 +1,5 @@
 using dotnet_smk_telkom_2025.Dtos.Parameters;
-using dotnet_smk_telkom_2025.Dtos.Results;
-using dotnet_smk_telkom_2025.Infrastructure.Databases;
-using BookStore.Models;
+using dotnet_smk_telkom_2025.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_smk_telkom_2025.Controllers;
@@ -11,34 +9,39 @@ namespace dotnet_smk_telkom_2025.Controllers;
 public class BookController : ControllerBase
 {
     private readonly ILogger<BookController> _logger;
-    private readonly InMemoryDbContext _inMemoryDb;
+    private readonly BookService _bookService;
 
     public BookController(
       ILogger<BookController> logger,
-      InMemoryDbContext inMemoryDb
+      BookService bookService
     )
     {
         _logger = logger;
-        _inMemoryDb = inMemoryDb;
+        _bookService = bookService;
     }
 
     [HttpGet]
     public IActionResult GetAll()
     {
-        var results = BookResult.MapModels(_inMemoryDb.Books);
+        var (error, results) = _bookService.GetAll();
+        if (error != null)
+        {
+            return error;
+        }
+
         return Ok(results);
     }
 
     [HttpGet("{id}")]
     public IActionResult FindOneById(Guid id)
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
-        if (book == null)
+        var (error, results) = _bookService.FindOneById(id);
+        if (error != null)
         {
-            return NotFound("Book not found");
+            return error;
         }
-        var result = new BookResult(book);
-        return Ok(result);
+
+        return Ok(results);
     }
 
     [HttpPost]
@@ -46,14 +49,13 @@ public class BookController : ControllerBase
       [FromBody] BookCreateParameter parameter
     )
     {
-        var book = BookCreateParameter.ToModel(parameter);
-        book.Id = Guid.NewGuid();
-        book.CreatedAt = DateTime.Now;
-        book.UpdatedAt = DateTime.Now;
-        _inMemoryDb.Books.Add(book);
+        var (error, results) = _bookService.Create(parameter);
+        if (error != null)
+        {
+            return error;
+        }
 
-        var result = new BookResult(book);
-        return Ok(result);
+        return Ok(results);
     }
 
     [HttpPatch("{id}")]
@@ -62,22 +64,13 @@ public class BookController : ControllerBase
       [FromBody] BookUpdateParameter parameter
     )
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
-        if (book == null)
+        var (error, results) = _bookService.Update(id, parameter);
+        if (error != null)
         {
-            return NotFound("Book not found");
-        }
-        book = BookUpdateParameter.ToModel(book, parameter);
-
-        var index = _inMemoryDb.Books.FindIndex(b => b.Id == book.Id);
-        if (index >= 0)
-        {
-            book.UpdatedAt = DateTime.Now;
-            _inMemoryDb.Books[index] = book;
+            return error;
         }
 
-        var result = new BookResult(book);
-        return Ok(result);
+        return Ok(results);
     }
 
     [HttpDelete("{id}")]
@@ -85,12 +78,12 @@ public class BookController : ControllerBase
       Guid id
     )
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
-        if (book == null)
+        var (error, results) = _bookService.Delete(id);
+        if (error != null)
         {
-            return NotFound("Book not found");
+            return error;
         }
-        _inMemoryDb.Books.Remove(book);
-        return Ok();
+
+        return Ok(results);
     }
 }
