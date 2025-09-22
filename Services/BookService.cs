@@ -1,30 +1,35 @@
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_smk_telkom_2025.Services;
 
 public class BookService
 {
-    private readonly InMemoryDbContext _inMemoryDb;
+    private readonly BookQueryRepository _bookQueryRepository;
+    private readonly BookStoreRepository _bookStoreRepository;
 
     public BookService(
-      InMemoryDbContext inMemoryDb
+      BookQueryRepository bookQueryRepository,
+      BookStoreRepository bookStoreRepository
     )
     {
-        _inMemoryDb = inMemoryDb;
+        _bookQueryRepository = bookQueryRepository;
+        _bookStoreRepository = bookStoreRepository;
     }
 
     public (IActionResult, List<BookResult>) GetAll()
     {
-        var results = BookResult.MapModels(_inMemoryDb.Books);
+        var books = _bookQueryRepository.FindAll();
+        var results = BookResult.MapModels(books);
         return (null, results);
     }
 
     public (IActionResult, BookResult) FindOneById(Guid id)
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        var book = _bookQueryRepository.FindOneById(id);
         if (book == null)
         {
             return (new NotFoundObjectResult("Book not found"), null);
@@ -38,10 +43,7 @@ public class BookService
     )
     {
         var book = BookCreateParameter.ToModel(parameter);
-        book.Id = Guid.NewGuid();
-        book.CreatedAt = DateTime.Now;
-        book.UpdatedAt = DateTime.Now;
-        _inMemoryDb.Books.Add(book);
+        book = _bookStoreRepository.Create(book);
 
         var result = new BookResult(book);
         return (null, result);
@@ -52,19 +54,13 @@ public class BookService
       BookUpdateParameter parameter
     )
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        var book = _bookQueryRepository.FindOneById(id);
         if (book == null)
         {
             return (new NotFoundObjectResult("Book not found"), null);
         }
         book = BookUpdateParameter.ToModel(book, parameter);
-
-        var index = _inMemoryDb.Books.FindIndex(b => b.Id == book.Id);
-        if (index >= 0)
-        {
-            book.UpdatedAt = DateTime.Now;
-            _inMemoryDb.Books[index] = book;
-        }
+        book = _bookStoreRepository.UpdateById(id, book);
 
         var result = new BookResult(book);
         return (null, result);
@@ -74,12 +70,13 @@ public class BookService
       Guid id
     )
     {
-        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        var book = _bookQueryRepository.FindOneById(id);
         if (book == null)
         {
             return (new NotFoundObjectResult("Book not found"), null);
         }
-        _inMemoryDb.Books.Remove(book);
+
+        _bookStoreRepository.DeleteById(id);
         return (null, null);
     }
 }

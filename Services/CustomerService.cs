@@ -1,30 +1,35 @@
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace dotnet_smk_telkom_2025.Services;
 
 public class CustomerService
 {
-    private readonly InMemoryDbContext _inMemoryDb;
+    private readonly CustomerQueryRepository _customerQueryRepository;
+    private readonly CustomerStoreRepository _customerStoreRepository;
 
     public CustomerService(
-      InMemoryDbContext inMemoryDb
+      CustomerQueryRepository customerQueryRepository,
+      CustomerStoreRepository customerStoreRepository
     )
     {
-        _inMemoryDb = inMemoryDb;
+        _customerQueryRepository = customerQueryRepository;
+        _customerStoreRepository = customerStoreRepository;
     }
 
     public (IActionResult, List<CustomerResult>) GetAll()
     {
-        var results = CustomerResult.MapModels(_inMemoryDb.Customers);
+        var customers = _customerQueryRepository.FindAll();
+        var results = CustomerResult.MapModels(customers);
         return (null, results);
     }
 
     public (IActionResult, CustomerResult) FindOneById(Guid id)
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        var customer = _customerQueryRepository.FindOneById(id);
         if (customer == null)
         {
             return (new NotFoundObjectResult("Customer not found"), null);
@@ -38,10 +43,7 @@ public class CustomerService
     )
     {
         var customer = CustomerCreateParameter.ToModel(parameter);
-        customer.Id = Guid.NewGuid();
-        customer.CreatedAt = DateTime.Now;
-        customer.UpdatedAt = DateTime.Now;
-        _inMemoryDb.Customers.Add(customer);
+        customer = _customerStoreRepository.Create(customer);
 
         var result = new CustomerResult(customer);
         return (null, result);
@@ -52,19 +54,13 @@ public class CustomerService
       CustomerUpdateParameter parameter
     )
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        var customer = _customerQueryRepository.FindOneById(id);
         if (customer == null)
         {
             return (new NotFoundObjectResult("Customer not found"), null);
         }
         customer = CustomerUpdateParameter.ToModel(customer, parameter);
-
-        var index = _inMemoryDb.Customers.FindIndex(c => c.Id == customer.Id);
-        if (index >= 0)
-        {
-            customer.UpdatedAt = DateTime.Now;
-            _inMemoryDb.Customers[index] = customer;
-        }
+        customer = _customerStoreRepository.UpdateById(id, customer);
 
         var result = new CustomerResult(customer);
         return (null, result);
@@ -74,12 +70,13 @@ public class CustomerService
       Guid id
     )
     {
-        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        var customer = _customerQueryRepository.FindOneById(id);
         if (customer == null)
         {
             return (new NotFoundObjectResult("Customer not found"), null);
         }
-        _inMemoryDb.Customers.Remove(customer);
+
+        _customerStoreRepository.DeleteById(id);
         return (null, null);
     }
 }
