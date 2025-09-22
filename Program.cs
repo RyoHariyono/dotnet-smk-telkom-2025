@@ -1,4 +1,5 @@
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,11 +15,9 @@ builder.Services.AddSingleton<InMemoryDbContext>();
 // builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 
 /* -------------------------------- Services -------------------------------- */
-// Add services here when needed
-// builder.Services.AddScoped<IUserService, UserService>();
-// builder.Services.AddScoped<IBookService, BookService>();
-// builder.Services.AddScoped<ICustomerService, CustomerService>();
-// builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<BookService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<PurchaseService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
