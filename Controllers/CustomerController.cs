@@ -1,48 +1,96 @@
-using System.Threading.Tasks;
+using dotnet_smk_telkom_2025.Dtos.Parameters;
+using dotnet_smk_telkom_2025.Dtos.Results;
+using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
-using BookStore.Services;
-using BookStore.Parameters;
 
-namespace BookStore.Controllers
+namespace dotnet_smk_telkom_2025.Controllers;
+
+[ApiController]
+[Route("customers")]
+public class CustomerController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class CustomerController : ControllerBase
+    private readonly ILogger<CustomerController> _logger;
+    private readonly InMemoryDbContext _inMemoryDb;
+
+    public CustomerController(
+      ILogger<CustomerController> logger,
+      InMemoryDbContext inMemoryDb
+    )
     {
-        private readonly ICustomerService _svc;
-        public CustomerController(ICustomerService svc) => _svc = svc;
+        _logger = logger;
+        _inMemoryDb = inMemoryDb;
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _svc.GetAllAsync());
+    [HttpGet]
+    public IActionResult GetAll()
+    {
+        var results = CustomerResult.MapModels(_inMemoryDb.Customers);
+        return Ok(results);
+    }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> Get(int id)
+    [HttpGet("{id}")]
+    public IActionResult FindOneById(Guid id)
+    {
+        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        if (customer == null)
         {
-            var c = await _svc.GetByIdAsync(id);
-            if (c == null) return NotFound();
-            return Ok(c);
+            return NotFound("Customer not found");
+        }
+        var result = new CustomerResult(customer);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public IActionResult Create(
+      [FromBody] CustomerCreateParameter parameter
+    )
+    {
+        var customer = CustomerCreateParameter.ToModel(parameter);
+        customer.Id = Guid.NewGuid();
+        customer.CreatedAt = DateTime.Now;
+        customer.UpdatedAt = DateTime.Now;
+        _inMemoryDb.Customers.Add(customer);
+
+        var result = new CustomerResult(customer);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id}")]
+    public IActionResult Update(
+      Guid id,
+      [FromBody] CustomerUpdateParameter parameter
+    )
+    {
+        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        if (customer == null)
+        {
+            return NotFound("Customer not found");
+        }
+        customer = CustomerUpdateParameter.ToModel(customer, parameter);
+
+        var index = _inMemoryDb.Customers.FindIndex(c => c.Id == customer.Id);
+        if (index >= 0)
+        {
+            customer.UpdatedAt = DateTime.Now;
+            _inMemoryDb.Customers[index] = customer;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CustomerCreateParameter p)
-        {
-            var created = await _svc.CreateAsync(p);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
-        }
+        var result = new CustomerResult(customer);
+        return Ok(result);
+    }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] CustomerCreateParameter p)
+    [HttpDelete("{id}")]
+    public IActionResult Delete(
+      Guid id
+    )
+    {
+        var customer = _inMemoryDb.Customers.FirstOrDefault(c => c.Id == id);
+        if (customer == null)
         {
-            var updated = await _svc.UpdateAsync(id, p);
-            if (updated == null) return NotFound();
-            return Ok(updated);
+            return NotFound("Customer not found");
         }
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _svc.DeleteAsync(id);
-            return NoContent();
-        }
+        _inMemoryDb.Customers.Remove(customer);
+        return Ok();
     }
 }

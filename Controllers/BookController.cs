@@ -1,49 +1,96 @@
-using System.Threading.Tasks;
+using dotnet_smk_telkom_2025.Dtos.Parameters;
+using dotnet_smk_telkom_2025.Dtos.Results;
+using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
-using BookStore.Services;
-using BookStore.Parameters;
 
+namespace dotnet_smk_telkom_2025.Controllers;
 
-namespace BookStore.Controllers
+[ApiController]
+[Route("books")]
+public class BookController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class BookController : ControllerBase
+    private readonly ILogger<BookController> _logger;
+    private readonly InMemoryDbContext _inMemoryDb;
+
+    public BookController(
+      ILogger<BookController> logger,
+      InMemoryDbContext inMemoryDb
+    )
     {
-        private readonly IBookService _svc;
-        public BookController(IBookService svc) => _svc = svc;
+        _logger = logger;
+        _inMemoryDb = inMemoryDb;
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll() => Ok(await _svc.GetAllAsync());
+    [HttpGet]
+    public IActionResult GetAll()
+    {
+        var results = BookResult.MapModels(_inMemoryDb.Books);
+        return Ok(results);
+    }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> Get(int id)
+    [HttpGet("{id}")]
+    public IActionResult FindOneById(Guid id)
+    {
+        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        if (book == null)
         {
-            var book = await _svc.GetByIdAsync(id);
-            if (book == null) return NotFound();
-            return Ok(book);
+            return NotFound("Book not found");
+        }
+        var result = new BookResult(book);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public IActionResult Create(
+      [FromBody] BookCreateParameter parameter
+    )
+    {
+        var book = BookCreateParameter.ToModel(parameter);
+        book.Id = Guid.NewGuid();
+        book.CreatedAt = DateTime.Now;
+        book.UpdatedAt = DateTime.Now;
+        _inMemoryDb.Books.Add(book);
+
+        var result = new BookResult(book);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id}")]
+    public IActionResult Update(
+      Guid id,
+      [FromBody] BookUpdateParameter parameter
+    )
+    {
+        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        if (book == null)
+        {
+            return NotFound("Book not found");
+        }
+        book = BookUpdateParameter.ToModel(book, parameter);
+
+        var index = _inMemoryDb.Books.FindIndex(b => b.Id == book.Id);
+        if (index >= 0)
+        {
+            book.UpdatedAt = DateTime.Now;
+            _inMemoryDb.Books[index] = book;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BookCreateParameter p)
-        {
-            var created = await _svc.CreateAsync(p);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
-        }
+        var result = new BookResult(book);
+        return Ok(result);
+    }
 
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] BookUpdateParameter p)
+    [HttpDelete("{id}")]
+    public IActionResult Delete(
+      Guid id
+    )
+    {
+        var book = _inMemoryDb.Books.FirstOrDefault(b => b.Id == id);
+        if (book == null)
         {
-            var updated = await _svc.UpdateAsync(id, p);
-            if (updated == null) return NotFound();
-            return Ok(updated);
+            return NotFound("Book not found");
         }
-
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _svc.DeleteAsync(id);
-            return Ok(null);
-        }
+        _inMemoryDb.Books.Remove(book);
+        return Ok();
     }
 }

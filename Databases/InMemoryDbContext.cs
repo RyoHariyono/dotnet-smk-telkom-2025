@@ -1,34 +1,10 @@
-using Microsoft.EntityFrameworkCore;
 using BookStore.Models;
 
-namespace BookStore.Databases
+namespace dotnet_smk_telkom_2025.Infrastructure.Databases;
+
+public class InMemoryDbContext
 {
-    public class InMemoryDbContext : DbContext
-    {
-        public InMemoryDbContext(DbContextOptions<InMemoryDbContext> options) : base(options) { }
-
-        public DbSet<Book> Books { get; set; }
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<Purchase> Purchases { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            // Atur tipe data untuk Price (opsional)
-            modelBuilder.Entity<Book>()
-                .Property(b => b.Price)
-                .HasPrecision(18, 2);
-
-            // Title harus diisi
-            modelBuilder.Entity<Book>()
-                .Property(b => b.Title)
-                .IsRequired();
-
-            // Name customer harus diisi
-            modelBuilder.Entity<Customer>()
-                .Property(c => c.Name)
-                .IsRequired();
-
-            base.OnModelCreating(modelBuilder);
-        }
-    }
+    public List<Book> Books { get; set; } = [];
+    public List<Customer> Customers { get; set; } = [];
+    public List<Purchase> Purchases { get; set; } = [];
 }
