@@ -1,5 +1,6 @@
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
 using dotnet_smk_telkom_2025.Services;
+using dotnet_smk_telkom_2025.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<InMemoryDbContext>();
 
 /* ------------------------------ Repositories ------------------------------ */
-// Add repositories here when needed
-// builder.Services.AddScoped<IUserRepository, UserRepository>();
-// builder.Services.AddScoped<IBookRepository, BookRepository>();
-// builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-// builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+builder.Services.AddScoped<BookQueryRepository>();
+builder.Services.AddScoped<BookStoreRepository>();
+builder.Services.AddScoped<CustomerQueryRepository>();
+builder.Services.AddScoped<CustomerStoreRepository>();
+builder.Services.AddScoped<PurchaseQueryRepository>();
+builder.Services.AddScoped<PurchaseStoreRepository>();
 
 /* -------------------------------- Services -------------------------------- */
 builder.Services.AddScoped<BookService>();
