@@ -1,6 +1,8 @@
+using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Infrastructure.Exceptions;
 using dotnet_smk_telkom_2025.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,13 +31,24 @@ public class CustomerService
 
     public (IActionResult, CustomerResult) FindOneById(Guid id)
     {
-        var customer = _customerQueryRepository.FindOneById(id);
-        if (customer == null)
+        try
         {
-            return (new NotFoundObjectResult("Customer not found"), null);
+            var customer = _customerQueryRepository.FindOneById(id);
+            if (customer == null)
+            {
+                throw new NotFoundException("Customer not found");
+            }
+            var result = new CustomerResult(customer);
+            return (null, result);
         }
-        var result = new CustomerResult(customer);
-        return (null, result);
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 
     public (IActionResult, CustomerResult) Create(
@@ -54,29 +67,51 @@ public class CustomerService
       CustomerUpdateParameter parameter
     )
     {
-        var customer = _customerQueryRepository.FindOneById(id);
-        if (customer == null)
+        try
         {
-            return (new NotFoundObjectResult("Customer not found"), null);
-        }
-        customer = CustomerUpdateParameter.ToModel(customer, parameter);
-        customer = _customerStoreRepository.UpdateById(id, customer);
+            var customer = _customerQueryRepository.FindOneById(id);
+            if (customer == null)
+            {
+                throw new NotFoundException("Customer not found");
+            }
+            customer = CustomerUpdateParameter.ToModel(customer, parameter);
+            customer = _customerStoreRepository.UpdateById(id, customer);
 
-        var result = new CustomerResult(customer);
-        return (null, result);
+            var result = new CustomerResult(customer);
+            return (null, result);
+        }
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 
     public (IActionResult, CustomerResult) Delete(
       Guid id
     )
     {
-        var customer = _customerQueryRepository.FindOneById(id);
-        if (customer == null)
+        try
         {
-            return (new NotFoundObjectResult("Customer not found"), null);
-        }
+            var customer = _customerQueryRepository.FindOneById(id);
+            if (customer == null)
+            {
+                throw new NotFoundException("Customer not found");
+            }
 
-        _customerStoreRepository.DeleteById(id);
-        return (null, null);
+            _customerStoreRepository.DeleteById(id);
+            return (null, null);
+        }
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 }

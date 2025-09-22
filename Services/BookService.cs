@@ -1,6 +1,8 @@
+using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Infrastructure.Exceptions;
 using dotnet_smk_telkom_2025.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,13 +31,24 @@ public class BookService
 
     public (IActionResult, BookResult) FindOneById(Guid id)
     {
-        var book = _bookQueryRepository.FindOneById(id);
-        if (book == null)
+        try
         {
-            return (new NotFoundObjectResult("Book not found"), null);
+            var book = _bookQueryRepository.FindOneById(id);
+            if (book == null)
+            {
+                throw new NotFoundException("Book not found");
+            }
+            var result = new BookResult(book);
+            return (null, result);
         }
-        var result = new BookResult(book);
-        return (null, result);
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 
     public (IActionResult, BookResult) Create(
@@ -54,29 +67,51 @@ public class BookService
       BookUpdateParameter parameter
     )
     {
-        var book = _bookQueryRepository.FindOneById(id);
-        if (book == null)
+        try
         {
-            return (new NotFoundObjectResult("Book not found"), null);
-        }
-        book = BookUpdateParameter.ToModel(book, parameter);
-        book = _bookStoreRepository.UpdateById(id, book);
+            var book = _bookQueryRepository.FindOneById(id);
+            if (book == null)
+            {
+                throw new NotFoundException("Book not found");
+            }
+            book = BookUpdateParameter.ToModel(book, parameter);
+            book = _bookStoreRepository.UpdateById(id, book);
 
-        var result = new BookResult(book);
-        return (null, result);
+            var result = new BookResult(book);
+            return (null, result);
+        }
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 
     public (IActionResult, BookResult) Delete(
       Guid id
     )
     {
-        var book = _bookQueryRepository.FindOneById(id);
-        if (book == null)
+        try
         {
-            return (new NotFoundObjectResult("Book not found"), null);
-        }
+            var book = _bookQueryRepository.FindOneById(id);
+            if (book == null)
+            {
+                throw new NotFoundException("Book not found");
+            }
 
-        _bookStoreRepository.DeleteById(id);
-        return (null, null);
+            _bookStoreRepository.DeleteById(id);
+            return (null, null);
+        }
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 }

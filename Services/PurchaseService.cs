@@ -1,6 +1,8 @@
+using System.Net;
 using dotnet_smk_telkom_2025.Dtos.Parameters;
 using dotnet_smk_telkom_2025.Dtos.Results;
 using dotnet_smk_telkom_2025.Infrastructure.Databases;
+using dotnet_smk_telkom_2025.Infrastructure.Exceptions;
 using dotnet_smk_telkom_2025.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,13 +31,24 @@ public class PurchaseService
 
     public (IActionResult, PurchaseResult) FindOneById(Guid id)
     {
-        var purchase = _purchaseQueryRepository.FindOneById(id);
-        if (purchase == null)
+        try
         {
-            return (new NotFoundObjectResult("Purchase not found"), null);
+            var purchase = _purchaseQueryRepository.FindOneById(id);
+            if (purchase == null)
+            {
+                throw new NotFoundException("Purchase not found");
+            }
+            var result = new PurchaseResult(purchase);
+            return (null, result);
         }
-        var result = new PurchaseResult(purchase);
-        return (null, result);
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 
     public (IActionResult, PurchaseResult) Create(
@@ -53,13 +66,24 @@ public class PurchaseService
       Guid id
     )
     {
-        var purchase = _purchaseQueryRepository.FindOneById(id);
-        if (purchase == null)
+        try
         {
-            return (new NotFoundObjectResult("Purchase not found"), null);
-        }
+            var purchase = _purchaseQueryRepository.FindOneById(id);
+            if (purchase == null)
+            {
+                throw new NotFoundException("Purchase not found");
+            }
 
-        _purchaseStoreRepository.DeleteById(id);
-        return (null, null);
+            _purchaseStoreRepository.DeleteById(id);
+            return (null, null);
+        }
+        catch (NotFoundException e)
+        {
+            return (new NotFoundObjectResult(e.Message), null);
+        }
+        catch (Exception e)
+        {
+            return (new ObjectResult(e.Message) { StatusCode = StatusCodes.Status500InternalServerError }, null);
+        }
     }
 }
